@@ -1,0 +1,36 @@
+body.galaxy-bg {
+  background: linear-gradient(to right top, #0f2027, #203a43, #2c5364);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidebar {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toolbar-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.toolbar-box select,
+.toolbar-box input,
+.toolbar-box button {
+  background-color: #1a2b3c;
+  color: #00ffff;
+  border: 1px solid #00ffff;
+}
+
+/* Colorful, glowing buttons */
+.btn-funky {
+  background: linear-gradient(to right, #00c6ff, #0072ff);
+  color: white;
+  border: none;
+  box-shadow: 0 0 10px rgba(0,255,255,0.3);
+}
+
+.btn-funky:hover {
+  background: linear-gradient(to left, #00c6ff, #0072ff);
+  box-shadow: 0 0 15px rgba(0,255,255,0.5);
+}
