@@ -91,14 +91,17 @@
     <div class="brand-title">Procure Smart</div>
     <div class="tagline">Your guide to smarter choices and greater profits!</div>
 
-    <!-- Upload box -->
-    <div class="upload-box">
-      <form method="POST" action="/upload" enctype="multipart/form-data">
-        <p>Upload Product Data (Excel Sheet)</p>
-        <input type="file" name="csv_file" class="form-control w-50 mx-auto mb-3" required />
-        <button type="submit" class="btn btn-outline-light mt-2">Upload File</button>
-      </form>
-    </div>
+    {% if uploaded_file %}
+    <p class="text-success">Uploaded file: <strong>{{ uploaded_file | basename }}</strong></p>
+    {% endif %}
+    <form method="POST" action="/" enctype="multipart/form-data">
+      <p>Upload Product Data (Excel Sheet)</p>
+      <input type="file" name="file" class="form-control w-50 mx-auto mb-3" required />
+      <button type="submit" class="btn btn-outline-light mt-2">
+        {% if uploaded_file %}Replace File{% else %}Upload File{% endif %}
+      </button>
+    </form>
+
 
     <!-- Mode buttons -->
     <div class="mode-btns">
@@ -126,3 +129,5 @@
 </body>
 
 </html>
+
+
