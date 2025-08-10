@@ -1,68 +1,255 @@
 # app.py
 import os
-from flask import Flask, render_template,request, redirect, session
-from flask_sqlalchemy import SQLAlchemy
-from auth import auth_bp, db, User  # imported from auth
-from file_handler import read_file
-from single_compare import generate_single_compare_chart, detect_valid_data
+import logging
+from flask import (
+    Flask, render_template, request, redirect, url_for, flash, session
+)
+from werkzeug.utils import secure_filename
 
+# Import your auth blueprint and login_required decorator from auth.py
+# Make sure auth.py defines `auth_bp`, `db`, and `login_required`
+from auth import auth_bp, db, login_required
 
+# Import functions from single_compare module (provided below)
+from single_compare import (
+    detect_valid_data,
+    extract_numeric_headers,
+    generate_single_compare_chart
+)
+
+# ===== App setup =====
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'replace_this_with_a_secure_random_secret'  # keep constant
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.secret_key = 'secret'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db.init_app(app)
+# Custom Jinja2 filter to get filename from full path
+@app.template_filter('basename')
+def basename_filter(path):
+    if path:
+        return os.path.basename(path)
+    return ''
+
+# Create folders (project-root relative)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+GRAPH_FOLDER = os.path.join(BASE_DIR, 'static', 'graphs')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(GRAPH_FOLDER, exist_ok=True)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Allowed upload extensions
+ALLOWED_EXTENSIONS = {'csv', 'xls', 'xlsx'}
+
+# Register auth blueprint and initialize DB
 app.register_blueprint(auth_bp)
-
+db.init_app(app)
 with app.app_context():
     db.create_all()
 
-@app.route('/')
+logging.basicConfig(level=logging.INFO)
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# ===== Routes =====
+
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    return render_template('home.html')
+    """
+    Home page:
+    - GET: show upload form and optional info.
+    - POST: upload file (saved to uploads/) and store path in session then show home again
+            (feature buttons will redirect to login or dashboard based on auth state).
+    """
+    if request.method == 'POST':
+        # handle upload
+        if 'file' not in request.files:
+            flash("No file part in request.", "warning")
+            return redirect(request.url)
+
+        file = request.files['file']
+        if not file or file.filename == '':
+            flash("No file selected.", "warning")
+            return redirect(request.url)
+
+        if not allowed_file(file.filename):
+            flash("Invalid file type. Allowed: csv, xls, xlsx", "danger")
+            return redirect(request.url)
+
+        try:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            file.save(file_path)
+            session['uploaded_file_path'] = file_path
+            flash("File uploaded successfully. Now choose a feature (you will be asked to log in if necessary).", "success")
+            return redirect(url_for('home'))
+        except Exception as e:
+            logging.exception("Error saving uploaded file")
+            flash(f"Error saving file: {e}", "danger")
+            return redirect(request.url)
+
+    # GET: show homepage
+    uploaded = session.get('uploaded_file_path')
+    return render_template('home.html', uploaded_file=uploaded)
+
+
+@app.route('/check_login_and_redirect')
+def check_login_and_redirect():
+    """
+    When user clicks a feature after uploading:
+    - If not logged in -> go to login page (after login user can go to dashboard).
+    - If logged in -> go to dashboard directly.
+    """
+    if 'email' not in session:
+        flash("Please log in to continue.", "info")
+        return redirect(url_for('auth.login'))
+    return redirect(url_for('dashboard'))
+
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
-    if 'name' in session:
-        return render_template('dashboard.html',user={'name': session['name']})
-    return redirect('/login')
+    """
+    Dashboard shows name and previously generated charts (if any).
+    Also contains a Home button to upload another file.
+    """
+    user_name = session.get('name')
+    # Show last 3 global charts (or per-user charts if you implement user-specific folders)
+    graph_dir = GRAPH_FOLDER
+    latest = []
+    try:
+        files = sorted(os.listdir(graph_dir), reverse=True)
+        latest = [f'/static/graphs/{f}' for f in files[:3]]
+    except FileNotFoundError:
+        latest = []
+
+    return render_template('dashboard.html', user={'name': user_name}, latest_charts=latest)
+
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect('/')
+    flash("Logged out.", "info")
+    return redirect(url_for('home'))
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    file = request.files['csv_file']
-    file_path = os.path.join('uploads', file.filename)
-    file.save(file_path)
-    session['uploaded_file_path'] = file_path
-    df = read_file(file_path)
-    print(df.head())  # For testing purposes
-    return redirect('/single_compare')
 
-@app.route('/single_compare', methods=['GET', 'POST'])
-def single_compare():
-    file_path = session.get('uploaded_file_path')  
-
-    if not file_path:
-        return "No uploaded file found in session."  
-
+@app.route('/upload', methods=['GET', 'POST'])
+@login_required
+def upload():
+    """
+    Upload route accessible from dashboard (if you want to allow upload from dashboard),
+    but since we support upload on home page, this route can be optional.
+    Kept for compatibility.
+    """
     if request.method == 'POST':
-        parameter = request.form['parameter']  
-        preference = request.form['preference']  # 'higher' or 'lower'
+        if 'file' not in request.files:
+            flash("No file part in request.", "warning")
+            return redirect(request.url)
+        file = request.files['file']
+        if not file or file.filename == '':
+            flash("No file selected.", "warning")
+            return redirect(request.url)
+        if not allowed_file(file.filename):
+            flash("Invalid file type. Allowed: csv, xls, xlsx", "danger")
+            return redirect(request.url)
+        try:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            file.save(file_path)
+            session['uploaded_file_path'] = file_path
+            flash("File uploaded successfully.", "success")
+            return redirect(url_for('single_compare'))
+        except Exception as e:
+            logging.exception("Error saving uploaded file")
+            flash(f"Error saving file: {e}", "danger")
+            return redirect(request.url)
+
+    return render_template('upload.html')
+
+
+# === single_compare route: robust version with validation and error handling ===
+@app.route('/single_compare', methods=['GET', 'POST'])
+@login_required
+def single_compare():
+    """
+    GET: Show dropdown populated with numeric headers extracted from the uploaded file.
+    POST: Validate selection and generate a chart (saved to static/graphs) and show it.
+    """
+    file_path = session.get('uploaded_file_path')
+
+    # If no file saved in session, ask user to upload
+    if not file_path or not os.path.exists(file_path):
+        flash("No uploaded file found. Please upload a file first.", "warning")
+        return redirect(url_for('home'))
+
+    # Try to read numeric headers for the dropdown (fail gracefully)
+    try:
+        headers = extract_numeric_headers(file_path)
+    except Exception as e:
+        logging.exception("Failed to extract headers")
+        flash(f"Failed to read uploaded file: {e}", "danger")
+        return redirect(url_for('home'))
+
+    if not headers:
+        flash("Uploaded file does not contain numeric columns to compare.", "danger")
+        return redirect(url_for('home'))
+
+    # POST: user selected parameter & preference -> generate chart
+    if request.method == 'POST':
+        parameter = request.form.get('parameter')
+        preference = request.form.get('preference', 'lower')
+        try:
+            top_n = int(request.form.get('top_n', 10))
+        except Exception:
+            top_n = 10
+
+        # Validate parameter selection
+        if not parameter or parameter not in headers:
+            flash("Please select a valid numeric parameter.", "danger")
+            return render_template('single_compare.html', headers=headers)
 
         try:
-            df, numeric_df = detect_valid_data(file_path)  
-            chart_path = generate_single_compare_chart(df, numeric_df, parameter, preference=preference)
-            return render_template('result.html', chart_path=chart_path)
+            # validate data (detect_valid_data returns df, numeric_df)
+            df, numeric_df = detect_valid_data(file_path)
+
+            if numeric_df.empty:
+                flash("Uploaded file contains no numeric columns to compare.", "danger")
+                return redirect(url_for('home'))
+
+            if parameter not in numeric_df.columns:
+                flash(f"Selected parameter '{parameter}' not found in uploaded numeric columns.", "danger")
+                return render_template('single_compare.html', headers=headers)
+
+            # generate chart - returns filename (basename)
+            filename = generate_single_compare_chart(
+                file_path,
+                parameter,
+                top_n=top_n,
+                preference=preference
+            )
+
+            # build URL for the saved chart and show it
+            chart_url = url_for('static', filename=f'graphs/{filename}')
+            flash("Chart generated successfully.", "success")
+            return render_template('single_compare.html', headers=headers, chart_url=chart_url)
+
         except Exception as e:
-            return f"Error processing chart: {str(e)}"
+            logging.exception("Error generating single-compare chart")
+            flash(f"Error generating chart: {e}", "danger")
+            return render_template('single_compare.html', headers=headers)
+
+    # GET -> show dropdown, no chart yet
+    return render_template('single_compare.html', headers=headers)
 
 
-    return render_template('single_compare.html')
-
-
+# ===== Run app =====
 if __name__ == '__main__':
     app.run(debug=True)
+
+
