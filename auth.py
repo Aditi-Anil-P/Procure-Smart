@@ -1,5 +1,5 @@
 #auth.py
-# from flask import Blueprint, request, render_template, redirect, session, flash, url_for
+from flask import Blueprint, request, render_template, redirect, session, flash, url_for
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import bcrypt
@@ -83,4 +83,3 @@ def logout():
     session.clear()
     flash("Logged out successfully.", "info")
     return redirect(url_for('auth.login'))
-

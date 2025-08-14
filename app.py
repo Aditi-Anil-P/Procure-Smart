@@ -14,7 +14,8 @@ from auth import auth_bp, db, login_required
 from single_compare import (
     detect_valid_data,
     extract_numeric_headers,
-    generate_single_compare_chart
+    generate_single_compare_chart,
+    generate_scatter_plot
 )
 
 # ===== App setup =====
@@ -204,52 +205,70 @@ def single_compare():
     if request.method == 'POST':
         parameter = request.form.get('parameter')
         preference = request.form.get('preference', 'lower')
+
+    # Bar chart range
+    try:
+        min_value = float(request.form.get('min_value')) if request.form.get('min_value') else None
+    except ValueError:
+        min_value = None
+    try:
+        max_value = float(request.form.get('max_value')) if request.form.get('max_value') else None
+    except ValueError:
+        max_value = None
+
+    # Scatter range
+    try:
+        scatter_min = float(request.form.get('scatter_min_value')) if request.form.get('scatter_min_value') else None
+    except ValueError:
+        scatter_min = None
+    try:
+        scatter_max = float(request.form.get('scatter_max_value')) if request.form.get('scatter_max_value') else None
+    except ValueError:
+        scatter_max = None
+
+    try:
+        top_n = int(request.form.get('top_n', 10))
+    except Exception:
+        top_n = 10
+
+    # Decide which button was pressed
+    if 'generate_scatter' in request.form:
         try:
-            top_n = int(request.form.get('top_n', 10))
-        except Exception:
-            top_n = 10
-
-        # Validate parameter selection
-        if not parameter or parameter not in headers:
-            flash("Please select a valid numeric parameter.", "danger")
-            return render_template('single_compare.html', headers=headers)
-
-        try:
-            # validate data (detect_valid_data returns df, numeric_df)
-            df, numeric_df = detect_valid_data(file_path)
-
-            if numeric_df.empty:
-                flash("Uploaded file contains no numeric columns to compare.", "danger")
-                return redirect(url_for('home'))
-
-            if parameter not in numeric_df.columns:
-                flash(f"Selected parameter '{parameter}' not found in uploaded numeric columns.", "danger")
-                return render_template('single_compare.html', headers=headers)
-
-            # generate chart - returns filename (basename)
-            filename = generate_single_compare_chart(
+            filename = generate_scatter_plot(
                 file_path,
                 parameter,
-                top_n=top_n,
-                preference=preference
+                preference=preference,
+                min_value=scatter_min,
+                max_value=scatter_max
             )
-
-            # build URL for the saved chart and show it
             chart_url = url_for('static', filename=f'graphs/{filename}')
-            flash("Chart generated successfully.", "success")
+            flash("Scatter plot generated successfully.", "success")
             return render_template('single_compare.html', headers=headers, chart_url=chart_url)
-
         except Exception as e:
-            logging.exception("Error generating single-compare chart")
-            flash(f"Error generating chart: {e}", "danger")
+            logging.exception("Error generating scatter plot")
+            flash(f"Error generating scatter plot: {e}", "danger")
             return render_template('single_compare.html', headers=headers)
 
-    # GET -> show dropdown, no chart yet
-    return render_template('single_compare.html', headers=headers)
+    # Else: generate bar chart
+    try:
+        filename = generate_single_compare_chart(
+            file_path,
+            parameter,
+            top_n=top_n,
+            preference=preference,
+            min_value=min_value,
+            max_value=max_value
+        )
+        chart_url = url_for('static', filename=f'graphs/{filename}')
+        flash("Bar chart generated successfully.", "success")
+        return render_template('single_compare.html', headers=headers, chart_url=chart_url)
+    except Exception as e:
+        logging.exception("Error generating bar chart")
+        flash(f"Error generating bar chart: {e}", "danger")
+        return render_template('single_compare.html', headers=headers)
 
 
 # ===== Run app =====
 if __name__ == '__main__':
     app.run(debug=True)
-
 
