@@ -1,0 +1,164 @@
+<!-- templates/dual_compare.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dual Parameter Compare</title>
+  <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/static/css/single_comp.css" rel="stylesheet" />
+  <link href="/static/css/charts.css" rel="stylesheet" />
+</head>
+
+<body class="galaxy-bg text-light">
+  <div class="container-fluid">
+    <div class="row">
+
+      <!-- Sidebar for desktop -->
+      <div class="col-lg-3 d-none d-lg-block p-3 sidebar">
+        <div class="toolbar-box p-3">
+          <form method="POST" action="{{ url_for('dual_compare') }}">
+            <!-- Parameter 1 -->
+            <div class="mb-2">
+              <label for="parameter1">Select Parameter 1</label>
+              <select name="parameter1" id="parameter1" class="form-select" required>
+                {% for h in headers %}
+                <option value="{{ h }}">{{ h }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-2">
+              <label for="min1">Min Value (Parameter 1)</label>
+              <input type="number" step="any" name="min1" id="min1" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label for="max1">Max Value (Parameter 1)</label>
+              <input type="number" step="any" name="max1" id="max1" class="form-control">
+            </div>
+
+            <!-- Parameter 2 -->
+            <div class="mb-2">
+              <label for="parameter2">Select Parameter 2</label>
+              <select name="parameter2" id="parameter2" class="form-select" required>
+                {% for h in headers %}
+                <option value="{{ h }}">{{ h }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-2">
+              <label for="min2">Min Value (Parameter 2)</label>
+              <input type="number" step="any" name="min2" id="min2" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label for="max2">Max Value (Parameter 2)</label>
+              <input type="number" step="any" name="max2" id="max2" class="form-control">
+            </div>
+
+            <!-- Top N -->
+            <div class="mb-2">
+              <label for="top_n">Number of Companies</label>
+              <input type="number" min="1" max="25" name="top_n" id="top_n" class="form-control" value="10">
+            </div>
+
+            <button class="btn btn-info w-100" type="submit">Compare</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Mobile top toolbar -->
+      <div class="col-12 d-block d-lg-none p-3">
+        <div class="toolbar-box p-2">
+          <form method="POST" action="{{ url_for('dual_compare') }}">
+            <!-- Parameter 1 -->
+            <div class="mb-2">
+              <label for="parameter1_mobile">Select Parameter 1</label>
+              <select name="parameter1" id="parameter1_mobile" class="form-select" required>
+                {% for h in headers %}
+                <option value="{{ h }}">{{ h }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-2">
+              <label for="min1_mobile">Min Value (Parameter 1)</label>
+              <input type="number" step="any" name="min1" id="min1_mobile" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label for="max1_mobile">Max Value (Parameter 1)</label>
+              <input type="number" step="any" name="max1" id="max1_mobile" class="form-control">
+            </div>
+
+            <!-- Parameter 2 -->
+            <div class="mb-2">
+              <label for="parameter2_mobile">Select Parameter 2</label>
+              <select name="parameter2" id="parameter2_mobile" class="form-select" required>
+                {% for h in headers %}
+                <option value="{{ h }}">{{ h }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-2">
+              <label for="min2_mobile">Min Value (Parameter 2)</label>
+              <input type="number" step="any" name="min2" id="min2_mobile" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label for="max2_mobile">Max Value (Parameter 2)</label>
+              <input type="number" step="any" name="max2" id="max2_mobile" class="form-control">
+            </div>
+
+            <!-- Top N -->
+            <div class="mb-2">
+              <label for="top_n_mobile">Number of Companies</label>
+              <input type="number" min="1" max="25" name="top_n" id="top_n_mobile" class="form-control" value="10">
+            </div>
+
+            <button class="btn btn-info w-100" type="submit">Compare</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div class="col-lg-9 col-12 p-3">
+        <h2 class="text-center">Dual Parameter Comparison</h2>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, msg in messages %}
+        <div class="alert alert-{{ 'danger' if category=='danger' else category }} mt-2">
+          {{ msg }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Chart area -->
+        <div id="charts" class="mt-3">
+          {% if chart_url %}
+          <h4>Result</h4>
+          <img src="{{ chart_url }}" alt="Dual Parameter Chart" class="img-fluid" />
+          {% else %}
+          <p class="text-muted">No chart yet. Select both parameters and press <strong>Compare</strong>.</p>
+          {% endif %}
+          {% if chart_url %}
+          <div class="mt-3 d-flex gap-3 justify-content-center">
+            <a href="{{ chart_url }}" download class="btn btn-download">⬇ Download</a>
+            <button type="button" class="btn btn-expand" onclick="openFullScreen('{{ chart_url }}')">⛶ Expand</button>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function openFullScreen(imgUrl) {
+      const newWin = window.open();
+      newWin.document.write(`<img src="${imgUrl}" style="width:100%;height:auto;">`);
+    }
+  </script>
+
+  <script src="/static/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
