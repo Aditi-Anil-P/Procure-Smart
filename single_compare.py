@@ -262,3 +262,5 @@ def generate_scatter_plot(file_path, parameter, preference='lower', min_value=No
 
     logging.info(f"Saved scatter plot to %s", full_path)
     return filename
+
+
