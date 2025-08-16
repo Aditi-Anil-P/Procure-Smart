@@ -17,6 +17,8 @@ from single_compare import (
     generate_single_compare_chart,
     generate_scatter_plot
 )
+from dual_compare import generate_dual_compare_chart
+
 
 # ===== App setup =====
 app = Flask(__name__)
@@ -267,8 +269,78 @@ def single_compare():
         flash(f"Error generating bar chart: {e}", "danger")
         return render_template('single_compare.html', headers=headers)
 
+@app.route('/dual_compare', methods=['GET', 'POST'])
+@login_required
+def dual_compare():
+    """
+    Dual parameter comparison:
+    - GET: show two dropdowns for parameter selection + min/max fields.
+    - POST: filter dataset by constraints for both parameters and display chart.
+    """
+    file_path = session.get('uploaded_file_path')
+
+    if not file_path or not os.path.exists(file_path):
+        flash("No uploaded file found. Please upload a file first.", "warning")
+        return redirect(url_for('home'))
+
+    try:
+        headers = extract_numeric_headers(file_path)
+    except Exception as e:
+        logging.exception("Failed to extract headers for dual compare")
+        flash(f"Failed to read uploaded file: {e}", "danger")
+        return redirect(url_for('home'))
+
+    if not headers:
+        flash("Uploaded file does not contain numeric columns to compare.", "danger")
+        return redirect(url_for('home'))
+
+    chart_url = None
+
+    if request.method == 'POST':
+        param1 = request.form.get('parameter1')
+        param2 = request.form.get('parameter2')
+
+        # Min/max values for both parameters
+        try:
+            min1 = float(request.form.get('min1')) if request.form.get('min1') else None
+        except ValueError:
+            min1 = None
+        try:
+            max1 = float(request.form.get('max1')) if request.form.get('max1') else None
+        except ValueError:
+            max1 = None
+        try:
+            min2 = float(request.form.get('min2')) if request.form.get('min2') else None
+        except ValueError:
+            min2 = None
+        try:
+            max2 = float(request.form.get('max2')) if request.form.get('max2') else None
+        except ValueError:
+            max2 = None
+
+        try:
+            top_n = int(request.form.get('top_n', 10))
+        except Exception:
+            top_n = 10
+
+        try:
+            filename = generate_dual_compare_chart(
+                file_path,
+                param1,
+                param2,
+                min1=min1, max1=max1,
+                min2=min2, max2=max2,
+                top_n=top_n
+            )
+            chart_url = url_for('static', filename=f'graphs/{filename}')
+            flash("Dual parameter chart generated successfully.", "success")
+        except Exception as e:
+            logging.exception("Error generating dual parameter chart")
+            flash(f"Error generating dual parameter chart: {e}", "danger")
+
+    return render_template('dual_compare.html', headers=headers, chart_url=chart_url)
+
 
 # ===== Run app =====
 if __name__ == '__main__':
     app.run(debug=True)
-
