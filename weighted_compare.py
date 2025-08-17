@@ -24,10 +24,6 @@ def scale(data, reverse=False):
 
 def generate_weighted_compare_chart(file_path, params, weights, preferences, ranges,
                                     top_n=10, min_score=None, max_score=None):
-    """
-    Weighted comparison of up to 5 parameters with user-defined weights.
-    Filters by per-parameter min/max and optional global score range.
-    """
     if not os.path.exists(file_path):
         raise FileNotFoundError("Uploaded file not found on server.")
 
@@ -68,16 +64,15 @@ def generate_weighted_compare_chart(file_path, params, weights, preferences, ran
         raise ValueError("Sum of weights must be greater than 0.")
     weights = [w / total_weight for w in weights]
 
-    # Scale each parameter and compute weighted score
-    all_scores = []
+    # Compute weighted score (first pass, full set)
+    scores_per_param = []
     for idx, p in enumerate(params):
         reverse = (preferences[idx] == "lower")
         scaled = scale(working[p].tolist(), reverse=reverse)
         weighted = [s * weights[idx] for s in scaled]
-        all_scores.append(weighted)
+        scores_per_param.append(weighted)
 
-    # Aggregate weighted scores
-    working["WeightedScore"] = np.sum(all_scores, axis=0)
+    working["WeightedScore"] = np.sum(scores_per_param, axis=0)
 
     # Apply global weighted score filter
     if min_score is not None:
@@ -88,25 +83,42 @@ def generate_weighted_compare_chart(file_path, params, weights, preferences, ran
     if working.empty:
         raise ValueError("No companies remain after applying weighted score constraints.")
 
-    # Sort by score and take top N
-    working = working.sort_values(by="WeightedScore", ascending=False)
-    working = working.head(top_n)
+    # Sort and truncate
+    working = working.sort_values(by="WeightedScore", ascending=False).head(top_n)
 
-    # --- Plot ---
+    # === Recompute contributions for trimmed set ===
+    contribs = []
+    for idx, p in enumerate(params):
+        reverse = (preferences[idx] == "lower")
+        scaled = scale(working[p].tolist(), reverse=reverse)
+        weighted = [s * weights[idx] for s in scaled]
+        contribs.append(weighted)
+
+    # --- Plot (stacked contributions) ---
     apply_dark_theme()
     labels = working[label_col].astype(str).tolist()
-    scores = working["WeightedScore"].tolist()
 
+    colors = ["#FF6F61", "#FFD54F", "#4FC3F7", "#81C784", "#BA68C8"]  # bright colors
     fig_width = max(10, min(24, 0.7 * len(labels)))
     fig, ax = plt.subplots(figsize=(fig_width, 6))
 
-    ax.bar(labels, scores, color="#4caf50")
+    bottom = np.zeros(len(labels))
+    for idx, contrib in enumerate(contribs):
+        ax.bar(labels, contrib, bottom=bottom,
+               color=colors[idx % len(colors)], label=params[idx])
+        bottom += contrib
+
     ax.set_ylabel("Weighted Score")
-    ax.set_title("Weighted Parameter Comparison")
+    ax.set_title("Weighted Parameter Comparison (Stacked by Parameter)")
     plt.xticks(rotation=90)
 
+    # White legend text
+    legend = ax.legend(title="Parameters", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.setp(legend.get_texts(), color="white")
+    plt.setp(legend.get_title(), color="white")
+
     fig.tight_layout()
-    fig.subplots_adjust(bottom=0.28 if len(labels) <= 12 else 0.36)
+    fig.subplots_adjust(bottom=0.28 if len(labels) <= 12 else 0.36, right=0.82)
 
     filename = f"{uuid.uuid4().hex[:10]}_weighted_compare.png"
     full_path = os.path.join(GRAPH_FOLDER, filename)
@@ -115,9 +127,3 @@ def generate_weighted_compare_chart(file_path, params, weights, preferences, ran
 
     logging.info("Saved weighted compare chart to %s", full_path)
     return filename
-
-
-
-
-
-
