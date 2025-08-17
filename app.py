@@ -5,6 +5,7 @@ from flask import (
     Flask, render_template, request, redirect, url_for, flash, session
 )
 from werkzeug.utils import secure_filename
+from datetime import datetime
 
 # Import your auth blueprint and login_required decorator from auth.py
 # Make sure auth.py defines `auth_bp`, `db`, and `login_required`
@@ -57,7 +58,13 @@ logging.basicConfig(level=logging.INFO)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+class Chart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    filename = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    user = db.relationship("User", backref=db.backref("charts", lazy=True))
 # ===== Routes =====
 
 @app.route('/', methods=['GET', 'POST'])
@@ -116,22 +123,20 @@ def check_login_and_redirect():
 
 @app.route('/dashboard')
 @login_required
+@app.route('/dashboard')
+@login_required
 def dashboard():
-    """
-    Dashboard shows name and previously generated charts (if any).
-    Also contains a Home button to upload another file.
-    """
     user_name = session.get('name')
-    # Show last 3 global charts (or per-user charts if you implement user-specific folders)
-    graph_dir = GRAPH_FOLDER
-    latest = []
-    try:
-        files = sorted(os.listdir(graph_dir), reverse=True)
-        latest = [f'/static/graphs/{f}' for f in files[:3]]
-    except FileNotFoundError:
-        latest = []
+    user_id = session.get('user_id')
 
-    return render_template('dashboard.html', user={'name': user_name}, latest_charts=latest)
+    charts = Chart.query.filter_by(user_id=user_id)\
+                        .order_by(Chart.created_at.desc())\
+                        .limit(3).all()
+    latest = [f"/static/graphs/{c.filename}" for c in charts]
+
+    return render_template('dashboard.html',
+                           user={'name': user_name},
+                           latest_charts=latest)
 
 
 @app.route('/logout')
@@ -341,13 +346,21 @@ def dual_compare():
     return render_template('dual_compare.html', headers=headers, chart_url=chart_url)
 
 @app.route("/weighted_compare", methods=["GET", "POST"])
+@login_required
 def weighted_compare():
     file_path = session.get("uploaded_file_path")
     if not file_path or not os.path.exists(file_path):
         flash("No uploaded file found. Please upload a file first.", "danger")
         return redirect(url_for("home"))
 
-    headers = extract_numeric_headers(file_path)
+    try:
+        from single_compare import detect_valid_data
+        df, numeric_df = detect_valid_data(file_path)
+    except Exception as e:
+        flash(f"Failed to read uploaded file: {e}", "danger")
+        return redirect(url_for("dashboard"))
+
+    headers = numeric_df.columns.tolist() if not numeric_df.empty else []
     if not headers:
         flash("No numeric parameters available in the uploaded file.", "danger")
         return redirect(url_for("dashboard"))
@@ -359,26 +372,38 @@ def weighted_compare():
             top_n = int(request.form.get("top_n", 10))
 
             # Collect parameter blocks dynamically
-            params = []
-            weights = []
-            prefs = []
-            ranges = []
+            params, weights, prefs, ranges = [], [], [], []
 
             for i in range(1, min(len(headers), 5) + 1):
                 param = request.form.get(f"param{i}")
-                weight = request.form.get(f"weight{i}")
-                pref = request.form.get(f"pref{i}")
-                min_val = request.form.get(f"min{i}")
-                max_val = request.form.get(f"max{i}")
+                if not param:
+                    continue  # skip if not selected
 
-                if param and weight:
-                    params.append(param)
-                    weights.append(float(weight))
-                    prefs.append(pref or "higher")
-                    ranges.append((
-                        float(min_val) if min_val else None,
-                        float(max_val) if max_val else None
-                    ))
+                # Default weight = 0 if blank
+                try:
+                    weight = float(request.form.get(f"weight{i}", 0))
+                except ValueError:
+                    weight = 0
+
+                # Default preference = higher
+                pref = request.form.get(f"pref{i}") or "higher"
+
+                # Default min/max from dataset if blank
+                col_data = numeric_df[param].dropna()
+                try:
+                    min_val = float(request.form.get(f"min{i}")) if request.form.get(f"min{i}") else col_data.min()
+                except ValueError:
+                    min_val = col_data.min()
+
+                try:
+                    max_val = float(request.form.get(f"max{i}")) if request.form.get(f"max{i}") else col_data.max()
+                except ValueError:
+                    max_val = col_data.max()
+
+                params.append(param)
+                weights.append(weight)
+                prefs.append(pref)
+                ranges.append((min_val, max_val))
 
             # Advanced options: weighted score constraints
             min_score = request.form.get("min_score")
@@ -386,6 +411,7 @@ def weighted_compare():
             min_score = float(min_score) if min_score else None
             max_score = float(max_score) if max_score else None
 
+            # Generate chart
             chart_file = generate_weighted_compare_chart(
                 file_path,
                 params=params,

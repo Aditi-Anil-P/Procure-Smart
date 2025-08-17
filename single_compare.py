@@ -4,6 +4,7 @@ import uuid
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
+from chart_utils import save_chart_metadata
 
 logging.basicConfig(level=logging.INFO)
 
@@ -209,6 +210,7 @@ def generate_single_compare_chart(file_path, parameter, top_n=10, preference='lo
     full_path = os.path.join(GRAPH_FOLDER, filename)
     plt.savefig(full_path, facecolor=plt.gcf().get_facecolor())
     plt.close()
+    save_chart_metadata(filename, limit=3) 
 
     logging.info(f"Saved chart to %s", full_path)
     return filename
@@ -259,8 +261,7 @@ def generate_scatter_plot(file_path, parameter, preference='lower', min_value=No
     full_path = os.path.join(GRAPH_FOLDER, filename)
     plt.savefig(full_path, facecolor=plt.gcf().get_facecolor())
     plt.close()
+    cleanup_old_charts(limit=3)
 
     logging.info(f"Saved scatter plot to %s", full_path)
     return filename
-
-

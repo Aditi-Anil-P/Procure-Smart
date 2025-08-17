@@ -2,6 +2,7 @@ import os
 import uuid
 import logging
 import matplotlib.pyplot as plt
+from chart_utils import save_chart_metadata
 
 # Import helper functions from single_compare
 from single_compare import detect_valid_data, extract_numeric_headers, _detect_label_column, apply_dark_theme
@@ -109,6 +110,7 @@ def generate_dual_compare_chart(file_path, param1, param2,
     full_path = os.path.join(GRAPH_FOLDER, filename)
     plt.savefig(full_path, facecolor=plt.gcf().get_facecolor())
     plt.close()
+    save_chart_metadata(filename, limit=3) 
 
     logging.info(f"Saved dual compare chart to %s", full_path)
     return filename
