@@ -14,26 +14,39 @@
       min-height: 100vh;
     }
 
-    .logout-btn {
+    /* General top-right button group */
+    .top-buttons {
       position: absolute;
       top: 10px;
       right: 10px;
+      display: flex;
+      gap: 10px;
+      /* spacing between buttons */
+    }
+
+    /* Shared button style */
+    .top-buttons a {
       background: #00bcd4;
       color: #fff;
-      padding: 8px 18px 8px 18px;
-      border: none;
+      padding: 8px 18px;
       border-radius: 30px;
       font-weight: 500;
       box-shadow: 0 0 10px rgba(0, 188, 212, 0.6);
       transition: all 0.3s ease;
       text-decoration: none;
-      z-index: 10;
       font-size: 1rem;
     }
 
-    .logout-btn:hover {
+    .top-buttons a:hover {
       background: #00acc1;
     }
+
+    @media(max-width:980px) {
+      .top-buttons a {
+        font-size: 0.7rem;
+      }
+    }
+
 
     .header-box {
       background: linear-gradient(to right, #212f45, #2c3e60);
@@ -59,11 +72,11 @@
 
     .chart-buttons .btn {
       margin: 12px 12px 12px 12px;
-      padding:1rem;
+      padding: 1rem;
       background-color: #073b4c;
       color: #ffffff;
-      
-      font-size:clamp(1rem, 2vw, 1.2rem);
+
+      font-size: clamp(1rem, 2vw, 1.2rem);
       font-weight: 600;
       border-radius: 15px;
       border: none;
@@ -116,8 +129,13 @@
 </head>
 
 <body>
+
   <div class="header-box position-relative">
-    <a href="/logout" class="logout-btn">Logout</a>
+    <div class="top-buttons">
+      <a href="{{ url_for('home') }}">Upload Another File</a>
+      <a href="/logout">Logout</a>
+    </div>
+
     <h2>Heyy {{user.name}}! Welcome to Procure Smart!</h2>
     <p>Ready to generate charts?</p>
   </div>
@@ -136,16 +154,18 @@
   <div class="container text-center">
     <h4>Previously Generated Charts:</h4>
     <div class="row justify-content-center chart-preview">
+      {% if latest %}
+      {% for chart in latest %}
       <div class="col-12 col-sm-6 col-md-4 mb-3">
-        <img src="/static/chart1.png" alt="Chart 1">
+        <img src="{{ chart }}" alt="Chart {{ loop.index }}">
       </div>
-      <div class="col-12 col-sm-6 col-md-4 mb-3">
-        <img src="/static/chart2.png" alt="Chart 2">
-      </div>
-      <div class="col-12 col-sm-6 col-md-4 mb-3">
-        <img src="/static/chart3.png" alt="Chart 3">
-      </div>
+      {% endfor %}
+      {% else %}
+      <p>No charts generated yet. Try creating one!</p>
+      {% endif %}
     </div>
+
+  </div>
   </div>
 </body>
 
