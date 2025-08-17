@@ -27,14 +27,17 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="mb-2">
-              <label for="scatter_min_value">Scatter Min Value</label>
-              <input type="number" step="any" name="scatter_min_value" id="scatter_min_value" class="form-control">
+            <div class="mb-2 row g-2">
+              <div class="col">
+                <label for="scatter_min_value">Scatter Min Value</label>
+                <input type="number" step="any" name="scatter_min_value" id="scatter_min_value" class="form-control">
+              </div>
+              <div class="col">
+                <label for="scatter_max_value">Scatter Max Value</label>
+                <input type="number" step="any" name="scatter_max_value" id="scatter_max_value" class="form-control">
+              </div>
             </div>
-            <div class="mb-2">
-              <label for="scatter_max_value">Scatter Max Value</label>
-              <input type="number" step="any" name="scatter_max_value" id="scatter_max_value" class="form-control">
-            </div>
+
             <button class="btn btn-secondary w-100" type="submit" name="generate_scatter">Generate Scatter Plot</button>
 
             <div class="mb-2">
@@ -49,14 +52,17 @@
               <label for="top_n">Number of Companies</label>
               <input type="number" min="1" max="25" name="top_n" id="top_n" class="form-control" value="10">
             </div>
-            <div class="mb-2">
-              <label for="min_value">Min Value</label>
-              <input type="number" step="any" name="min_value" id="min_value" class="form-control">
+            <div class="mb-2 row g-2">
+              <div class="col">
+                <label for="min_value">Min Value</label>
+                <input type="number" step="any" name="min_value" id="min_value" class="form-control">
+              </div>
+              <div class="col">
+                <label for="max_value">Max Value</label>
+                <input type="number" step="any" name="max_value" id="max_value" class="form-control">
+              </div>
             </div>
-            <div class="mb-2">
-              <label for="max_value">Max Value</label>
-              <input type="number" step="any" name="max_value" id="max_value" class="form-control">
-            </div>
+
 
             <button class="btn btn-info w-100" type="submit">Compare</button>
 
@@ -76,15 +82,16 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="mb-2">
-              <label for="scatter_min_value">Scatter Min Value</label>
-              <input type="number" step="any" name="scatter_min_value" id="scatter_min_value" class="form-control">
+            <div class="mb-2 row g-2">
+              <div class="col">
+                <label for="scatter_min_value">Scatter Min Value</label>
+                <input type="number" step="any" name="scatter_min_value" id="scatter_min_value" class="form-control">
+              </div>
+              <div class="col">
+                <label for="scatter_max_value">Scatter Max Value</label>
+                <input type="number" step="any" name="scatter_max_value" id="scatter_max_value" class="form-control">
+              </div>
             </div>
-            <div class="mb-2">
-              <label for="scatter_max_value">Scatter Max Value</label>
-              <input type="number" step="any" name="scatter_max_value" id="scatter_max_value" class="form-control">
-            </div>
-            <button class="btn btn-secondary w-100" type="submit" name="generate_scatter">Generate Scatter Plot</button>
 
             <div class="mb-2">
               <label for="preference_mobile">Preference</label>
@@ -99,14 +106,17 @@
               <input type="number" min="1" max="25" name="top_n" id="top_n_mobile" class="form-control" value="10">
             </div>
 
-            <div class="mb-2">
-              <label for="min_value">Min Value</label>
-              <input type="number" step="any" name="min_value" id="min_value" class="form-control">
+            <div class="mb-2 row g-2">
+              <div class="col">
+                <label for="min_value">Min Value</label>
+                <input type="number" step="any" name="min_value" id="min_value" class="form-control">
+              </div>
+              <div class="col">
+                <label for="max_value">Max Value</label>
+                <input type="number" step="any" name="max_value" id="max_value" class="form-control">
+              </div>
             </div>
-            <div class="mb-2">
-              <label for="max_value">Max Value</label>
-              <input type="number" step="any" name="max_value" id="max_value" class="form-control">
-            </div>
+
 
 
             <button class="btn btn-info w-100" type="submit">Compare</button>
@@ -159,4 +169,5 @@
 </body>
 
 </html>
+
 
