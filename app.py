@@ -19,7 +19,7 @@ from single_compare import (
 )
 from dual_compare import generate_dual_compare_chart
 
-
+from weighted_compare import generate_weighted_compare_chart
 # ===== App setup =====
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'replace_this_with_a_secure_random_secret'  # keep constant
@@ -339,6 +339,74 @@ def dual_compare():
             flash(f"Error generating dual parameter chart: {e}", "danger")
 
     return render_template('dual_compare.html', headers=headers, chart_url=chart_url)
+
+@app.route("/weighted_compare", methods=["GET", "POST"])
+def weighted_compare():
+    file_path = session.get("uploaded_file_path")
+    if not file_path or not os.path.exists(file_path):
+        flash("No uploaded file found. Please upload a file first.", "danger")
+        return redirect(url_for("home"))
+
+    headers = extract_numeric_headers(file_path)
+    if not headers:
+        flash("No numeric parameters available in the uploaded file.", "danger")
+        return redirect(url_for("dashboard"))
+
+    chart_url = None
+    if request.method == "POST":
+        try:
+            # Number of companies
+            top_n = int(request.form.get("top_n", 10))
+
+            # Collect parameter blocks dynamically
+            params = []
+            weights = []
+            prefs = []
+            ranges = []
+
+            for i in range(1, min(len(headers), 5) + 1):
+                param = request.form.get(f"param{i}")
+                weight = request.form.get(f"weight{i}")
+                pref = request.form.get(f"pref{i}")
+                min_val = request.form.get(f"min{i}")
+                max_val = request.form.get(f"max{i}")
+
+                if param and weight:
+                    params.append(param)
+                    weights.append(float(weight))
+                    prefs.append(pref or "higher")
+                    ranges.append((
+                        float(min_val) if min_val else None,
+                        float(max_val) if max_val else None
+                    ))
+
+            # Advanced options: weighted score constraints
+            min_score = request.form.get("min_score")
+            max_score = request.form.get("max_score")
+            min_score = float(min_score) if min_score else None
+            max_score = float(max_score) if max_score else None
+
+            chart_file = generate_weighted_compare_chart(
+                file_path,
+                params=params,
+                weights=weights,
+                preferences=prefs,
+                ranges=ranges,
+                top_n=top_n,
+                min_score=min_score,
+                max_score=max_score
+            )
+            chart_url = f"/static/graphs/{chart_file}"
+
+        except Exception as e:
+            flash(str(e), "danger")
+
+    return render_template(
+        "weighted_compare.html",
+        headers=headers,
+        param_limit=min(len(headers), 5),
+        chart_url=chart_url
+    )
 
 
 # ===== Run app =====
