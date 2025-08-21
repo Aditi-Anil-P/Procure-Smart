@@ -105,10 +105,20 @@
 
     <!-- Mode buttons -->
     <div class="mode-btns">
-      <a href="/login"><button class="btn btn-warning">Compare single parameter for all manufacturers</button></a>
-      <a href="/login"><button class="btn btn-success">Compare all parameters (equal weight)</button></a>
-      <a href="/login"><button class="btn btn-primary">Compare all parameters (custom weights)</button></a>
+      {% if session.get('user_id') %}
+      <!-- User is logged in: send to feature pages -->
+      <a href="{{ url_for('single_compare') }}" class="btn btn-warning">Compare single parameter</a>
+      <a href="{{ url_for('dual_compare') }}" class="btn btn-success">Compare dual parameters (equal weight)</a>
+      <a href="{{ url_for('weighted_compare') }}" class="btn btn-primary">Compare multiple parameters (custom
+        weights)</a>
+      {% else %}
+      <!-- User not logged in: send to login -->
+      <a href="{{ url_for('login') }}" class="btn btn-warning">Compare single parameter</a>
+      <a href="{{ url_for('login') }}" class="btn btn-success">Compare dual parameters (equal weight)</a>
+      <a href="{{ url_for('login') }}" class="btn btn-primary">Compare multiple parameters (custom weights)</a>
+      {% endif %}
     </div>
+
 
     <!-- Optional charts toggle section -->
     <div class="charts-section">
@@ -129,4 +139,3 @@
 </body>
 
 </html>
-

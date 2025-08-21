@@ -95,13 +95,35 @@
 
     .chart-preview img {
       width: 100%;
-      max-width: 240px;
+      max-width: 100%;
+      /* allow Bootstrap column to control size */
       height: auto;
       border-radius: 12px;
       border: 2px solid #00cfff;
       box-shadow: 0 0 20px rgba(0, 200, 255, 0.3);
       transition: transform 0.3s ease;
     }
+
+    .card {
+      background: linear-gradient(to bottom, #1b263b, #0d1b2a);
+      border-radius: 15px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(0, 200, 255, 0.4);
+    }
+
+    .card-img-top {
+      max-height: 200px;
+      object-fit: contain;
+      /* ensures image fits nicely */
+      padding: 10px;
+      background: #0d1b2a;
+    }
+
 
     .chart-preview img:hover {
       transform: scale(1.05);
@@ -153,17 +175,22 @@
   <!-- Chart Preview Section -->
   <div class="container text-center">
     <h4>Previously Generated Charts:</h4>
-    <div class="row justify-content-center chart-preview">
-      {% if latest %}
-      {% for chart in latest %}
-      <div class="col-12 col-sm-6 col-md-4 mb-3">
-        <img src="{{ chart }}" alt="Chart {{ loop.index }}">
+    <div class="row justify-content-center">
+      {% if latest_charts %}
+      {% for chart in latest_charts %}
+      <div class="col-md-4 mb-4">
+        <div class="card bg-dark text-light shadow-sm p-3 h-100">
+          <img src="{{ chart }}" alt="Chart" class="img-fluid rounded">
+        </div>
       </div>
       {% endfor %}
+
       {% else %}
       <p>No charts generated yet. Try creating one!</p>
       {% endif %}
     </div>
+  </div>
+
 
   </div>
   </div>

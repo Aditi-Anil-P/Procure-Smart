@@ -3,7 +3,7 @@ import uuid
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-from chart_utils import cleanup_old_charts
+from chart_utils import save_chart_metadata
 
 from single_compare import detect_valid_data, _detect_label_column, apply_dark_theme
 
@@ -125,8 +125,6 @@ def generate_weighted_compare_chart(file_path, params, weights, preferences, ran
     full_path = os.path.join(GRAPH_FOLDER, filename)
     plt.savefig(full_path, facecolor=plt.gcf().get_facecolor())
     plt.close()
-    cleanup_old_charts(limit=3)
-
+    save_chart_metadata(filename,limit=3)
     logging.info("Saved weighted compare chart to %s", full_path)
     return filename
-

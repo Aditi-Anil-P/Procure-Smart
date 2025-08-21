@@ -1,7 +1,7 @@
 import os
 import logging
 from flask import session
-from app import Chart, db
+from auth import Chart, db
 
 GRAPH_FOLDER = os.path.join("static", "graphs")
 

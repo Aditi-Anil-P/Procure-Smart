@@ -5,11 +5,10 @@ from flask import (
     Flask, render_template, request, redirect, url_for, flash, session
 )
 from werkzeug.utils import secure_filename
-from datetime import datetime
 
 # Import your auth blueprint and login_required decorator from auth.py
 # Make sure auth.py defines `auth_bp`, `db`, and `login_required`
-from auth import auth_bp, db, login_required
+from auth import auth_bp, db, Chart,login_required
 
 # Import functions from single_compare module (provided below)
 from single_compare import (
@@ -58,13 +57,7 @@ logging.basicConfig(level=logging.INFO)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-class Chart(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    filename = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship("User", backref=db.backref("charts", lazy=True))
 # ===== Routes =====
 
 @app.route('/', methods=['GET', 'POST'])
@@ -123,20 +116,19 @@ def check_login_and_redirect():
 
 @app.route('/dashboard')
 @login_required
-@app.route('/dashboard')
-@login_required
 def dashboard():
     user_name = session.get('name')
     user_id = session.get('user_id')
 
-    charts = Chart.query.filter_by(user_id=user_id)\
-                        .order_by(Chart.created_at.desc())\
-                        .limit(3).all()
-    latest = [f"/static/graphs/{c.filename}" for c in charts]
+    latest = []
+    if user_id:
+        charts = Chart.query.filter_by(user_id=user_id)\
+                            .order_by(Chart.created_at.desc())\
+                            .limit(3).all()
+        latest = [f"/static/graphs/{c.filename}" for c in charts]
 
-    return render_template('dashboard.html',
-                           user={'name': user_name},
-                           latest_charts=latest)
+    return render_template('dashboard.html', user={'name': user_name}, latest_charts=latest)
+
 
 
 @app.route('/logout')
@@ -422,7 +414,7 @@ def weighted_compare():
                 min_score=min_score,
                 max_score=max_score
             )
-            chart_url = f"/static/graphs/{chart_file}"
+            chart_url = url_for("static", filename=f"graphs/{chart_file}")
 
         except Exception as e:
             flash(str(e), "danger")

@@ -3,7 +3,7 @@ from flask import Blueprint, request, render_template, redirect, session, flash,
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import bcrypt
-
+from datetime import datetime
 auth_bp = Blueprint('auth', __name__)
 db = SQLAlchemy()
 
@@ -24,7 +24,13 @@ class User(db.Model):
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password.encode('utf-8'))
 
+class Chart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    filename = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    user = db.relationship("User", backref="charts")
 # ======================
 # Login Required Decorator
 # ======================
@@ -70,6 +76,8 @@ def login():
         if user and user.check_password(password):
             session['name'] = user.name
             session['email'] = user.email
+            session['user_id'] = user.id
+
             flash(f"Welcome, {user.name}!", "success")
             return redirect('/dashboard')
         else:
@@ -83,5 +91,3 @@ def logout():
     session.clear()
     flash("Logged out successfully.", "info")
     return redirect(url_for('auth.login'))
-
-
