@@ -113,9 +113,9 @@
         weights)</a>
       {% else %}
       <!-- User not logged in: send to login -->
-      <a href="{{ url_for('login') }}" class="btn btn-warning">Compare single parameter</a>
-      <a href="{{ url_for('login') }}" class="btn btn-success">Compare dual parameters (equal weight)</a>
-      <a href="{{ url_for('login') }}" class="btn btn-primary">Compare multiple parameters (custom weights)</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-warning">Compare single parameter</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-success">Compare dual parameters (equal weight)</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Compare multiple parameters (custom weights)</a>
       {% endif %}
     </div>
 
