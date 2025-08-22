@@ -34,3 +34,7 @@ body.galaxy-bg {
   background: linear-gradient(to left, #00c6ff, #0072ff);
   box-shadow: 0 0 15px rgba(0,255,255,0.5);
 }
+
+#sing_comp_err_msg{
+  color: white;
+}
