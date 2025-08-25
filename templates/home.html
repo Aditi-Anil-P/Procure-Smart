@@ -25,6 +25,8 @@
       position: absolute;
       top: 20px;
       right: 30px;
+      display: flex;
+      gap: 10px;
     }
 
     .container-custom {
@@ -81,9 +83,14 @@
 
 <body>
 
-  <!-- Login Button -->
+  <!-- Top-right actions (dynamic based on login state) -->
   <div class="login-top-right">
-    <a href="/login" class="btn btn-outline-light">Log In</a>
+    {% if session.get('email') %}
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light">Dashboard</a>
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-warning">Logout</a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light">Log In</a>
+    {% endif %}
   </div>
 
   <!-- Main content -->
@@ -91,10 +98,25 @@
     <div class="brand-title">Procure Smart</div>
     <div class="tagline">Your guide to smarter choices and greater profits!</div>
 
+    <!-- Flash messages (consumes queued flashes so they don't leak into later pages) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-2">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category=='danger' else category }} alert-dismissible fade show" role="alert" style="max-width: 720px; margin: 0 auto 12px;">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     {% if uploaded_file %}
-    <p class="text-success">Uploaded file: <strong>{{ uploaded_file | basename }}</strong></p>
+      <p class="text-success">Uploaded file: <strong>{{ uploaded_file | basename }}</strong></p>
     {% endif %}
-    <form method="POST" action="/" enctype="multipart/form-data">
+
+    <form method="POST" action="{{ url_for('home') }}" enctype="multipart/form-data">
       <p>Upload Product Data (Excel Sheet)</p>
       <input type="file" name="file" class="form-control w-50 mx-auto mb-3" required />
       <button type="submit" class="btn btn-outline-light mt-2">
@@ -102,40 +124,38 @@
       </button>
     </form>
 
-
-    <!-- Mode buttons -->
-    <div class="mode-btns">
-      {% if session.get('user_id') %}
-      <!-- User is logged in: send to feature pages -->
-      <a href="{{ url_for('single_compare') }}" class="btn btn-warning">Compare single parameter</a>
-      <a href="{{ url_for('dual_compare') }}" class="btn btn-success">Compare dual parameters (equal weight)</a>
-      <a href="{{ url_for('weighted_compare') }}" class="btn btn-primary">Compare multiple parameters (custom
-        weights)</a>
-      {% else %}
-      <!-- User not logged in: send to login -->
-      <a href="{{ url_for('auth.login') }}" class="btn btn-warning">Compare single parameter</a>
-      <a href="{{ url_for('auth.login') }}" class="btn btn-success">Compare dual parameters (equal weight)</a>
-      <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Compare multiple parameters (custom weights)</a>
-      {% endif %}
+    <!-- Feature buttons -->
+    <div class="mode-btns mt-4">
+      <!-- If logged in, go straight to feature routes; else go to login -->
+      <a class="btn btn-warning"
+         href="{{ url_for('single_compare') if session.get('email') else url_for('auth.login') }}">
+        Compare single parameter
+      </a>
+      <a class="btn btn-success"
+         href="{{ url_for('dual_compare') if session.get('email') else url_for('auth.login') }}">
+        Compare dual parameters (equal weight)
+      </a>
+      <a class="btn btn-primary"
+         href="{{ url_for('weighted_compare') if session.get('email') else url_for('auth.login') }}">
+        Compare multiple parameters (custom weights)
+      </a>
     </div>
-
 
     <!-- Optional charts toggle section -->
     <div class="charts-section">
       <h5>Some popular checkpoints</h5>
       <div>
-        <button class="btn btn-outline-light btn-sm">Price</button>
-        <button class="btn btn-outline-light btn-sm">Customer Rating</button>
-        <button class="btn btn-outline-light btn-sm">Delivery Period</button>
-        <button class="btn btn-outline-light btn-sm">Warranty</button>
-        <button class="btn btn-outline-light btn-sm">Guarantee</button>
-        <button class="btn btn-outline-light btn-sm">Product Lifetime</button>
-        <button class="btn btn-outline-light btn-sm">Exchange Span</button>
-        <button class="btn btn-outline-light btn-sm">Exchange Span</button>
+        <button class="btn btn-outline-light btn-sm" type="button">Price</button>
+        <button class="btn btn-outline-light btn-sm" type="button">Customer Rating</button>
+        <button class="btn btn-outline-light btn-sm" type="button">Delivery Period</button>
+        <button class="btn btn-outline-light btn-sm" type="button">Warranty</button>
+        <button class="btn btn-outline-light btn-sm" type="button">Guarantee</button>
+        <button class="btn btn-outline-light btn-sm" type="button">Product Lifetime</button>
+        <button class="btn btn-outline-light btn-sm" type="button">Exchange Span</button>
       </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
