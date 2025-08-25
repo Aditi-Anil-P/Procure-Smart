@@ -64,7 +64,7 @@ def generate_dual_compare_chart(file_path, param1, param2,
     if working.empty:
         raise ValueError("No companies found within the specified constraints.")
 
-    # Sort for consistent plotting (optional)
+    # Sorting
     working = working.sort_values(by=param1, ascending=False)
     
     # Apply top_n cap
@@ -74,12 +74,12 @@ def generate_dual_compare_chart(file_path, param1, param2,
     # Apply theme
     apply_dark_theme()
 
-    # --- Plot dual-axis bar chart ---
+    # Plot dual-axis bar chart 
     labels = working[label_col].astype(str).tolist()
     n = len(labels)
 
-    # Wider fig for more labels; cap for sanity
-    fig_width = max(10, min(24, 0.7 * n))   # ~0.7 inch per label
+    # Wider fig for more labels
+    fig_width = max(10, min(24, 0.7 * n))   # 0.7 inch per label
     fig, ax1 = plt.subplots(figsize=(fig_width, 6))
 
     x = range(n)
@@ -95,13 +95,13 @@ def generate_dual_compare_chart(file_path, param1, param2,
     ax2.set_ylabel(param2, color=color2)
     ax2.tick_params(axis='y', labelcolor=color2)
 
-    # Fully vertical labels + extra bottom space so they don’t pile or get cut
+    # Fully vertical labels + extra bottom space so they don’t overlap or get out of frame
     ax1.set_xticks(x)
     ax1.set_xticklabels(labels, rotation='vertical', ha='center', fontsize=8)
 
     plt.title(f"{param1} vs {param2} Comparison")
 
-    # Give labels breathing room AFTER setting ticks
+    # Give labels display space
     fig.tight_layout()
     fig.subplots_adjust(bottom=0.28 if n <= 12 else 0.36)  # a bit more space when many labels
 

@@ -38,3 +38,37 @@ body.galaxy-bg {
 #sing_comp_err_msg{
   color: white;
 }
+
+.btn-download {
+  background: transparent;
+  color: #00FFFF;
+  border: 2px solid #00FFFF;
+  padding: 10px 20px;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  
+}
+
+.btn-download:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 3px rgb(235, 235, 235);
+}
+
+.btn-expand {
+  background: transparent;
+  color: #00FFFF;
+  border: 2px solid #00FFFF;
+  padding: 10px 20px;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5s);
+  
+}
+
+.btn-expand:hover {
+  
+  color: #FFFFFF;
+  transform: scale(1.05);
+  box-shadow: 0 0 3px rgb(255, 255, 255);
+}

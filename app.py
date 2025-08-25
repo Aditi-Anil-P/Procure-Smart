@@ -6,11 +6,11 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 
-# Import your auth blueprint and login_required decorator from auth.py
-# Make sure auth.py defines `auth_bp`, `db`, and `login_required`
+# Importing auth blueprint and login_required decorator from auth.py
+
 from auth import auth_bp, db, Chart,login_required
 
-# Import functions from single_compare module (provided below)
+# Importing required functions from single_compare module 
 from single_compare import (
     detect_valid_data,
     extract_numeric_headers,
@@ -45,7 +45,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Allowed upload extensions
 ALLOWED_EXTENSIONS = {'csv', 'xls', 'xlsx'}
 
-# Register auth blueprint and initialize DB
+# Registering auth blueprint and initialize DB
 app.register_blueprint(auth_bp)
 db.init_app(app)
 with app.app_context():
@@ -173,7 +173,7 @@ def upload():
     return render_template('upload.html')
 
 
-# === single_compare route: robust version with validation and error handling ===
+# === single_compare route: ===
 @app.route('/single_compare', methods=['GET', 'POST'])
 @login_required
 def single_compare():
@@ -188,7 +188,7 @@ def single_compare():
         flash("No uploaded file found. Please upload a file first.", "warning")
         return redirect(url_for('home'))
 
-    # Try to read numeric headers for the dropdown (fail gracefully)
+    # Try to read numeric headers for the dropdown 
     try:
         headers = extract_numeric_headers(file_path)
     except Exception as e:
@@ -215,7 +215,7 @@ def single_compare():
     except ValueError:
         max_value = None
 
-    # Scatter range
+    # Scatter plot range
     try:
         scatter_min = float(request.form.get('scatter_min_value')) if request.form.get('scatter_min_value') else None
     except ValueError:
@@ -429,4 +429,4 @@ def weighted_compare():
 
 # ===== Run app =====
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

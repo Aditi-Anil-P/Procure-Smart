@@ -7,9 +7,9 @@ from datetime import datetime
 auth_bp = Blueprint('auth', __name__)
 db = SQLAlchemy()
 
-# ======================
-# User Model
-# ======================
+# ======  User Model  ================
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -31,9 +31,9 @@ class Chart(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", backref="charts")
-# ======================
-# Login Required Decorator
-# ======================
+
+
+# =========  Login Required Decorator =============
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -44,9 +44,9 @@ def login_required(f):
     return decorated_function
 
 
-# ======================
-# Routes
-# ======================
+
+
+# =========   Routes  =============
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':

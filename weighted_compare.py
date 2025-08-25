@@ -65,7 +65,7 @@ def generate_weighted_compare_chart(file_path, params, weights, preferences, ran
         raise ValueError("Sum of weights must be greater than 0.")
     weights = [w / total_weight for w in weights]
 
-    # Compute weighted score (first pass, full set)
+    # Compute weighted score 
     scores_per_param = []
     for idx, p in enumerate(params):
         reverse = (preferences[idx] == "lower")
@@ -87,7 +87,7 @@ def generate_weighted_compare_chart(file_path, params, weights, preferences, ran
     # Sort and truncate
     working = working.sort_values(by="WeightedScore", ascending=False).head(top_n)
 
-    # === Recompute contributions for trimmed set ===
+    # Recompute contributions for trimmed set 
     contribs = []
     for idx, p in enumerate(params):
         reverse = (preferences[idx] == "lower")
@@ -95,11 +95,11 @@ def generate_weighted_compare_chart(file_path, params, weights, preferences, ran
         weighted = [s * weights[idx] for s in scaled]
         contribs.append(weighted)
 
-    # --- Plot (stacked contributions) ---
+    #  Plot (stacked contributions)
     apply_dark_theme()
     labels = working[label_col].astype(str).tolist()
 
-    colors = ["#FF6F61", "#FFD54F", "#4FC3F7", "#81C784", "#BA68C8"]  # bright colors
+    colors = ["#FF6F61", "#FFD54F", "#4FC3F7", "#81C784", "#BA68C8"]  # bright colors to distinguish per paramter contribution
     fig_width = max(10, min(24, 0.7 * len(labels)))
     fig, ax = plt.subplots(figsize=(fig_width, 6))
 

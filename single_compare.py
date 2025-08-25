@@ -17,13 +17,13 @@ def detect_valid_data(file_path):
     Read uploaded file (csv/xls/xlsx), detect header row (first row with >=2 non-empty),
     assign headers and return (df, numeric_df).
 
-    numeric_df is a cleaned numeric-only DataFrame (same row alignment as df),
-    where common noise is removed:
+    numeric_df is a cleaned numeric-only DataFrame ,
+   
       - currency symbols (₹ $ € £ ¥), common currency abbreviations (Rs, INR, USD, etc.)
-      - commas (thousand separators), percent sign '%' (stripped but NOT converted to fraction)
+      - commas (thousand separators), percent sign '%' (are removed but not converted to fraction)
       - parentheses like (1,200) are converted to -1200
       - excessive spaces / non-breaking spaces removed
-    Non-numeric columns remain in `df` unchanged. `numeric_df` will have numeric values (or NaN).
+    Non-numeric columns remain in df unchanged. `numeric_df` will have numeric values (or NaN).
     """
     ext = os.path.splitext(file_path)[1].lower()
 
@@ -73,7 +73,7 @@ def detect_valid_data(file_path):
                 # remove commas (thousand separators)
                 s = s.str.replace(',', '', regex=False)
 
-                # strip percent sign but DO NOT convert to 0-1 (user requested)
+                # strip percent sign but doesn't convert to fraction (values range from 0-100)
                 s = s.str.replace('%', '', regex=False)
 
                 # collapse any remaining internal whitespace
@@ -81,7 +81,7 @@ def detect_valid_data(file_path):
 
                 cleaned[col] = s
 
-            # Convert cleaned to numeric where possible. Keep rows aligned with df (we do not drop rows here).
+            # Convert cleaned data to numeric where possible. 
             numeric_df = cleaned.apply(pd.to_numeric, errors='coerce')
 
             # drop columns that are all-NaN after cleaning (non-numeric columns will be removed here)
@@ -90,13 +90,13 @@ def detect_valid_data(file_path):
             # Return original df (with headers preserved) and numeric_df aligned by row index
             return df.reset_index(drop=True), numeric_df.reset_index(drop=True)
 
-    # nothing valid found
+    # no valid data found
     return pd.DataFrame(), pd.DataFrame()
 
 
 
 def extract_numeric_headers(file_path):
-    """Return list of numeric column headers for dropdown."""
+    #Return list of numeric column headers for dropdown.
     df, numeric_df = detect_valid_data(file_path)
     if numeric_df.empty:
         return []
@@ -104,7 +104,7 @@ def extract_numeric_headers(file_path):
 
 
 def _detect_label_column(df, numeric_cols):
-    """Heuristic to choose label/name column."""
+    #Keywords to choose label/name column.
     keywords = ['name', 'company', 'seller', 'brand', 'product']
     for col in df.columns:
         if isinstance(col, str) and any(k in col.lower() for k in keywords):

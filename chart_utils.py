@@ -17,7 +17,7 @@ def save_chart_metadata(filename, limit=3):
     db.session.add(new_chart)
     db.session.commit()
 
-    # Cleanup: keep only latest N charts for this user
+    # Cleanup: keep only latest 3 charts of this user
     charts = Chart.query.filter_by(user_id=user_id)\
                         .order_by(Chart.created_at.desc()).all()
     for old in charts[limit:]:
